@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Catch the Gold</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #87CEEB; }
+    canvas { display: block; margin: auto; background: #e0f7ff; }
+    #scoreboard {
+      position: absolute; top: 10px; left: 10px; 
+      font-size: 20px; font-family: Arial, sans-serif;
+      background: rgba(255,255,255,0.8); padding: 5px 10px; border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreboard">Score: 0 | Time: 60</div>
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreboard = document.getElementById("scoreboard");
+
+    let basket = { x: 270, y: 350, w: 60, h: 30, speed: 5 };
+    let golds = [];
+    let score = 0;
+    let timeLeft = 60;
+    let gameInterval, timerInterval;
+
+    function drawBasket() {
+      ctx.fillStyle = "brown";
+      ctx.fillRect(basket.x, basket.y, basket.w, basket.h);
+    }
+
+    function drawGold(g) {
+      ctx.fillStyle = "gold";
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBasket();
+
+      // Update gold positions
+      for (let i = 0; i < golds.length; i++) {
+        let g = golds[i];
+        g.y += g.speed;
+        drawGold(g);
+
+        // Check if caught
+        if (
+          g.y + g.r >= basket.y &&
+          g.x > basket.x &&
+          g.x < basket.x + basket.w
+        ) {
+          score++;
+          golds.splice(i, 1);
+          playSound();
+          i--;
+        } else if (g.y > canvas.height) {
+          golds.splice(i, 1);
+          i--;
+        }
+      }
+
+      // Randomly spawn gold
+      if (Math.random() < 0.02) {
+        golds.push({
+          x: Math.random() * canvas.width,
+          y: 0,
+          r: 5 + Math.random() * 10,
+          speed: 2 + Math.random() * 2
+        });
+      }
+
+      scoreboard.innerText = `Score: ${score} | Time: ${timeLeft}`;
+    }
+
+    // Controls
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && basket.x > 0) basket.x -= basket.speed;
+      if (e.key === "ArrowRight" && basket.x + basket.w < canvas.width) basket.x += basket.speed;
+      if (e.key === "ArrowUp" && basket.y > 0) basket.y -= basket.speed;
+      if (e.key === "ArrowDown" && basket.y + basket.h < canvas.height) basket.y += basket.speed;
+    });
+
+    // Sound
+    function playSound() {
+      const audio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+      audio.play();
+    }
+
+    // Timer
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          clearInterval(gameInterval);
+          alert("Game Over! Final Score: " + score);
+        }
+      }, 1000);
+    }
+
+    // Start game
+    function startGame() {
+      gameInterval = setInterval(update, 20);
+      startTimer();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
